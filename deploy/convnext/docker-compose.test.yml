@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  convnext-isolated-service:
+    build:
+      context: ../../
+      dockerfile: deploy/convnext/Dockerfile
+    container_name: dermavision-convnext-test
+    ports:
+      - "8002:8002"
+    environment:
+      - ENVIRONMENT=staging
+      - LOG_LEVEL=INFO
+      - API_PORT=8002
+      - API_HOST=0.0.0.0
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/api/v1/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3

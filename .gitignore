@@ -1,0 +1,72 @@
+# ==============================================================================
+# Skin Lesion Research & Explainable AI Platform - Master .gitignore
+# ==============================================================================
+
+# Virtual Environments, Interpreters & Python Caches
+.venv/
+venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+*.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# Node.js, Frontend Bundles & Logs
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# Sensitive Configuration & API Secrets (CRITICAL: DO NOT COMMIT)
+.env
+*.env
+backend/.env
+frontend/.env
+backups/**/*.env
+*.pem
+*.key
+*.token
+!*.env.example
+
+# Large Binary Model Checkpoints (>100MB)
+*.pt
+*.pth
+*.keras
+*.h5
+*.bin
+models/experiments/
+models/production/*.pt
+models/production/*.keras
+
+# Datasets, Raw Images & Local Symlinks
+data/raw
+data/raw/
+data/**/*.jpg
+data/**/*.jpeg
+data/**/*.png
+!frontend/public/Background.png
+!frontend/public/test_sample.jpg
+!frontend/public/favicon.svg
+!frontend/public/icons.svg
+!audits/final_presentation/evidence/*.png
+
+# Local Backups & Ephemeral Scratch Files
+scratch/
+backups/
+
+# Operating System & IDE Clutter
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.vscode/
+.idea/

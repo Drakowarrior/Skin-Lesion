@@ -1,0 +1,36 @@
+{
+  "model_name": "ResNet50 Skin Lesion Classifier",
+  "version": "v1",
+  "source_checkpoint": "resnet50_phase26_best.keras",
+  "production_checkpoint": "resnet50_skin_lesion_v1.keras",
+  "architecture": "ResNet50",
+  "num_classes": 14,
+  "class_names": [
+    "Actinic keratoses",
+    "Basal cell carcinoma",
+    "Benign keratosis-like lesions",
+    "Chickenpox",
+    "Cowpox",
+    "Dermatofibroma",
+    "HFMD",
+    "Healthy",
+    "Measles",
+    "Melanocytic nevi",
+    "Melanoma",
+    "Monkeypox",
+    "Squamous cell carcinoma",
+    "Vascular lesions"
+  ],
+  "dataset": "HAM10000 / ISIC Expanded",
+  "input_size": [
+    224,
+    224,
+    3
+  ],
+  "framework": "TensorFlow/Keras",
+  "phase": 26,
+  "status": "frozen_production_candidate",
+  "sha256": "93a121c51900dc70d9e95b5a1d75e54c442fcdb4f20a1397625bcffb6dedd58e",
+  "total_parameters": 24124046,
+  "trainable_parameters": 14956814
+}
