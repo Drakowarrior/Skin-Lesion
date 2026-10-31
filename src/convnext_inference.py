@@ -166,7 +166,7 @@ class ConvNeXtLesionPredictor:
 
         # 2. Preprocess and Tensor Forward Pass
         tensor = self.preprocess_image(image_input)
-        with torch.no_grad():
+        with torch.inference_mode():
             logits = self.model(tensor) # Shape: (1, 14)
             raw_probs_tensor = F.softmax(logits, dim=-1)
             raw_probs = raw_probs_tensor.cpu().numpy()[0] # Shape: (14,)

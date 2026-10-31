@@ -75,7 +75,7 @@ class ConvNeXtGradCAMGenerator:
 
         logits = self.model(image_tensor) # Shape: (1, 14)
         score = logits[0, target_class_index]
-        score.backward(retain_graph=True)
+        score.backward(retain_graph=False)
 
         if self.gradients is None or self.activations is None:
             raise RuntimeError("Failed to capture activations or gradients from target layer.")
@@ -84,6 +84,11 @@ class ConvNeXtGradCAMGenerator:
         # In ConvNeXt features[-1], output shape is (1, 768, 12, 12)
         grads = self.gradients.detach()
         acts = self.activations.detach()
+
+        # Immediate memory cleanup of hook buffers and parameter gradients
+        self.activations = None
+        self.gradients = None
+        self.model.zero_grad(set_to_none=True)
 
         # Channel weights: alpha_k = mean(grad_k)
         weights = torch.mean(grads, dim=(2, 3), keepdim=True) # (1, C, 1, 1)

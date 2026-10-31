@@ -1,0 +1,11 @@
+# ==============================================================================
+# Skin Lesion Research & Explainable AI Platform - Research & Rollback Dependencies
+# ==============================================================================
+# Extends production dependencies with legacy ResNet50 (TensorFlow/Keras) tools.
+# For standard production deployment on Render, use requirements.txt instead.
+
+-r requirements.txt
+
+# Legacy Deep Learning (Rollback Baseline & Training Pipelines)
+tensorflow>=2.16.0
+keras>=3.0.0

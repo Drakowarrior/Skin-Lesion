@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: skin-lesion-api
+    env: python
+    plan: starter
+    region: oregon
+    branch: main
+    buildCommand: pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && pip install --no-cache-dir -r requirements.txt && python scripts/download_production_weights.py --url "$PRODUCTION_MODEL_URL"
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: PYTHON_VERSION
+        value: 3.11.11
+      - key: API_HOST
+        value: 0.0.0.0
+      - key: MODEL_ENGINE
+        value: convnext
+      - key: MODEL_PATH
+        value: models/production/convnext_small_skin_lesion_v1.pt
+      - key: PRODUCTION_MODEL_URL
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: MAX_UPLOAD_SIZE
+        value: "10485760"
+      - key: METRICS_ENABLED
+        value: "true"
+      - key: METRICS_AUTH_TOKEN
+        generateValue: true
+      - key: AI_PROVIDER
+        value: groq
+      - key: AI_MODEL
+        value: qwen/qwen3.8-27b
+      - key: AI_API_KEY
+        sync: false
