@@ -25,9 +25,9 @@ from fastapi.responses import JSONResponse
 from PIL import Image, UnidentifiedImageError
 
 from backend.config import (
+    PROJECT_ROOT,
     MODEL_ENGINE,
     MODEL_PATH,
-    FALLBACK_MODEL_PATH,
     EXPECTED_MODEL_SHA256,
     MODEL_NAME,
     MODEL_ARCHITECTURE,
@@ -73,26 +73,47 @@ async def lifespan(app: FastAPI):
     logger.info("=" * 60)
     logger.info(f"Starting FastAPI Backend Service (Phase 14 Deployment - Env: {ENVIRONMENT})...")
     
-    model_to_load = MODEL_PATH if MODEL_PATH.exists() else FALLBACK_MODEL_PATH
-    logger.info(f"Loading production {MODEL_ARCHITECTURE} model from: {model_to_load}")
+    from backend import config
+    active_model_path = getattr(config, "MODEL_PATH", MODEL_PATH)
+    active_env = getattr(config, "ENVIRONMENT", ENVIRONMENT)
+    resolved_model_path = active_model_path.resolve() if active_model_path.is_absolute() else (PROJECT_ROOT / active_model_path).resolve()
+    logger.info(f"Resolved production {MODEL_ARCHITECTURE} model path: {resolved_model_path}")
     
-    try:
-        if MODEL_ENGINE == "convnext" or str(model_to_load).endswith(".pt"):
-            from src.convnext_inference import ConvNeXtLesionPredictor
-            app.state.predictor = ConvNeXtLesionPredictor(model_path=model_to_load, verify_sha=True)
+    if not resolved_model_path.exists():
+        err_msg = (
+            f"CRITICAL STARTUP FAILURE: Model checkpoint file not found at '{resolved_model_path}'. "
+            "Please ensure the checkpoint is downloaded and verified before starting the service. "
+            "Silent fallback to unverified or alternative checkpoints is strictly prohibited."
+        )
+        logger.error(err_msg)
+        if active_env == "production":
+            raise RuntimeError(err_msg)
         else:
-            from src.inference import SkinLesionPredictor
-            app.state.predictor = SkinLesionPredictor(model_path=model_to_load)
+            app.state.predictor = None
+            app.state.explainer = None
+            app.state.startup_time = time.time()
+    else:
+        try:
+            if MODEL_ENGINE == "convnext" or str(resolved_model_path).endswith(".pt"):
+                from src.convnext_inference import ConvNeXtLesionPredictor
+                app.state.predictor = ConvNeXtLesionPredictor(model_path=resolved_model_path, verify_sha=True)
+            else:
+                from src.inference import SkinLesionPredictor
+                app.state.predictor = SkinLesionPredictor(model_path=resolved_model_path)
 
-        app.state.explainer = ExplainabilityService(app.state.predictor)
-        app.state.startup_time = time.time()
-        logger.info(f"Model & Grad-CAM Explainability service loaded successfully into memory.")
-        logger.info(f"Active Architecture: {MODEL_ARCHITECTURE} | Classes: {app.state.predictor.num_classes} | Input: {app.state.predictor.input_shape}")
-    except Exception as e:
-        logger.error(f"Failed to load model or explainability service: {str(e)}")
-        app.state.predictor = None
-        app.state.explainer = None
-        app.state.startup_time = time.time()
+            app.state.explainer = ExplainabilityService(app.state.predictor)
+            app.state.startup_time = time.time()
+            logger.info(f"Model & Grad-CAM Explainability service loaded successfully into memory.")
+            logger.info(f"Active Architecture: {MODEL_ARCHITECTURE} | Classes: {app.state.predictor.num_classes} | Input: {app.state.predictor.input_shape}")
+        except Exception as e:
+            err_msg = f"CRITICAL STARTUP FAILURE: Failed to load model or explainability service: {str(e)}"
+            logger.error(err_msg)
+            if ENVIRONMENT == "production":
+                raise RuntimeError(err_msg) from e
+            else:
+                app.state.predictor = None
+                app.state.explainer = None
+                app.state.startup_time = time.time()
 
     ai_key_configured = bool(AI_API_KEY and AI_API_KEY.strip() and not AI_API_KEY.startswith("your_"))
     if ai_key_configured:

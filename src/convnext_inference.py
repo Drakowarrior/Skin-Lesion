@@ -25,7 +25,7 @@ from src.calibration import TemperatureScaler
 from src.uncertainty import UncertaintyEstimator, PredictionState
 from src.image_quality import ImageQualityGate, QualityState
 
-DEFAULT_CONVNEXT_CHECKPOINT_PATH = Path("models/experiments/phase10a_convnext/convnext_small_best.pt")
+DEFAULT_CONVNEXT_CHECKPOINT_PATH = Path("models/production/convnext_small_skin_lesion_v1.pt")
 EXPECTED_CONVNEXT_SHA256 = "67f4d8d04edef9389aeac77688dcc90e193b717de67f8c4c0c1ebf15483a3fe3"
 
 

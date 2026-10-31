@@ -31,14 +31,12 @@ DEFAULT_RESNET_PATH = PROJECT_ROOT / "models" / "production" / "resnet50_skin_le
 
 if MODEL_ENGINE == "convnext":
     MODEL_PATH = Path(os.getenv("MODEL_PATH", DEFAULT_CONVNEXT_PATH))
-    FALLBACK_MODEL_PATH = Path(PROJECT_ROOT / "models" / "experiments" / "phase10a_convnext" / "convnext_small_best.pt")
     EXPECTED_MODEL_SHA256 = "67f4d8d04edef9389aeac77688dcc90e193b717de67f8c4c0c1ebf15483a3fe3"
     MODEL_NAME = "convnext_small_v1"
     MODEL_ARCHITECTURE = "ConvNeXt-Small"
     MODEL_INPUT_SIZE = "384x384"
 else:
     MODEL_PATH = Path(os.getenv("MODEL_PATH", DEFAULT_RESNET_PATH))
-    FALLBACK_MODEL_PATH = Path(PROJECT_ROOT / "models" / "resnet50_phase26_best.keras")
     EXPECTED_MODEL_SHA256 = "93a121c51900dc70d9e95b5a1d75e54c442fcdb4f20a1397625bcffb6dedd58e"
     MODEL_NAME = "resnet50_skin_lesion_v1"
     MODEL_ARCHITECTURE = "ResNet50"
