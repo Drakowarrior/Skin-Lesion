@@ -13,6 +13,7 @@ Features:
 """
 
 import io
+import os
 import time
 import logging
 from contextlib import asynccontextmanager
@@ -80,19 +81,42 @@ async def lifespan(app: FastAPI):
     logger.info(f"Resolved production {MODEL_ARCHITECTURE} model path: {resolved_model_path}")
     
     if not resolved_model_path.exists():
-        err_msg = (
-            f"CRITICAL STARTUP FAILURE: Model checkpoint file not found at '{resolved_model_path}'. "
-            "Please ensure the checkpoint is downloaded and verified before starting the service. "
-            "Silent fallback to unverified or alternative checkpoints is strictly prohibited."
-        )
-        logger.error(err_msg)
-        if active_env == "production":
-            raise RuntimeError(err_msg)
-        else:
-            app.state.predictor = None
-            app.state.explainer = None
-            app.state.startup_time = time.time()
-    else:
+        prod_model_url = os.getenv("PRODUCTION_MODEL_URL", "").strip()
+        if not prod_model_url:
+            prod_model_url = "https://github.com/Drakowarrior/Skin-Lesion/releases/download/v1.0.0/convnext_small_skin_lesion_v1.pt"
+
+        logger.info(f"Model checkpoint not found locally at '{resolved_model_path}'.")
+        logger.info(f"Attempting verified checkpoint acquisition from: {prod_model_url}...")
+
+        download_ok = False
+        try:
+            from scripts.download_production_weights import download_and_verify
+            expected_sha = getattr(config, "EXPECTED_MODEL_SHA256", EXPECTED_MODEL_SHA256)
+            download_ok = download_and_verify(
+                url=prod_model_url,
+                target_path=resolved_model_path,
+                expected_sha256=expected_sha,
+                timeout=180,
+            )
+        except Exception as dl_err:
+            logger.error(f"Automated model acquisition encountered exception: {dl_err}", exc_info=True)
+
+        if not download_ok:
+            err_msg = (
+                f"CRITICAL STARTUP FAILURE: Model checkpoint file not found at '{resolved_model_path}' "
+                f"and automated acquisition from '{prod_model_url}' failed. "
+                "Please ensure the checkpoint is downloaded and verified before starting the service. "
+                "Silent fallback to unverified or alternative checkpoints is strictly prohibited."
+            )
+            logger.error(err_msg)
+            if active_env in ["production", "prod"]:
+                raise RuntimeError(err_msg)
+            else:
+                app.state.predictor = None
+                app.state.explainer = None
+                app.state.startup_time = time.time()
+
+    if resolved_model_path.exists():
         try:
             if MODEL_ENGINE == "convnext" or str(resolved_model_path).endswith(".pt"):
                 from src.convnext_inference import ConvNeXtLesionPredictor
@@ -103,12 +127,12 @@ async def lifespan(app: FastAPI):
 
             app.state.explainer = ExplainabilityService(app.state.predictor)
             app.state.startup_time = time.time()
-            logger.info(f"Model & Grad-CAM Explainability service loaded successfully into memory.")
+            logger.info("Model & Grad-CAM Explainability service loaded successfully into memory.")
             logger.info(f"Active Architecture: {MODEL_ARCHITECTURE} | Classes: {app.state.predictor.num_classes} | Input: {app.state.predictor.input_shape}")
         except Exception as e:
             err_msg = f"CRITICAL STARTUP FAILURE: Failed to load model or explainability service: {str(e)}"
-            logger.error(err_msg)
-            if ENVIRONMENT == "production":
+            logger.error(err_msg, exc_info=True)
+            if active_env in ["production", "prod"]:
                 raise RuntimeError(err_msg) from e
             else:
                 app.state.predictor = None

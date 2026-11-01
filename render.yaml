@@ -20,7 +20,7 @@ services:
       - key: MODEL_PATH
         value: models/production/convnext_small_skin_lesion_v1.pt
       - key: PRODUCTION_MODEL_URL
-        sync: false
+        value: https://github.com/Drakowarrior/Skin-Lesion/releases/download/v1.0.0/convnext_small_skin_lesion_v1.pt
       - key: ALLOWED_ORIGINS
         sync: false
       - key: MAX_UPLOAD_SIZE

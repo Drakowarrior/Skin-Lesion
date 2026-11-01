@@ -21,6 +21,9 @@ import urllib.error
 DEFAULT_TARGET_PATH = Path("models/production/convnext_small_skin_lesion_v1.pt")
 DEFAULT_MANIFEST_PATH = Path("models/production/model_sha256.txt")
 FALLBACK_SHA256 = "67f4d8d04edef9389aeac77688dcc90e193b717de67f8c4c0c1ebf15483a3fe3"
+DEFAULT_RELEASE_URL = (
+    "https://github.com/Drakowarrior/Skin-Lesion/releases/download/v1.0.0/convnext_small_skin_lesion_v1.pt"
+)
 
 
 def get_expected_sha256(manifest_path: Path, filename: str) -> str:
@@ -176,7 +179,8 @@ def main():
 
     args = parser.parse_args()
 
-    if not args.url:
+    resolved_url = (args.url or "").strip() or os.environ.get("PRODUCTION_MODEL_URL", "").strip() or DEFAULT_RELEASE_URL
+    if not resolved_url:
         print("[ERROR] No download URL provided. Pass --url <URL> or set PRODUCTION_MODEL_URL.", file=sys.stderr)
         sys.exit(1)
 
@@ -190,7 +194,7 @@ def main():
     )
 
     success = download_and_verify(
-        url=args.url,
+        url=resolved_url,
         target_path=target_path,
         expected_sha256=expected_sha,
         force=args.force,
